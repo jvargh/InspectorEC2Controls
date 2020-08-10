@@ -30,7 +30,7 @@ Lambda and Py implementation can be found in 'lambdaCrossAccountAccess'. Py-Loca
 * Common benefits came about by using EC2 batch start and stop API, and the [Waiters module](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#waiters) was used to wait for a collective return of resources when a specified state was reached.
 * Single lambda to host Stop/Start/Inspector runs. Event inputs can be used to trigger what needs to get executed, see sample launch.json as an example.   
 
-## *Output of a Sample run*
+## *Output of a sample run*
 
 The below output is common across both designs. 
 - When Start-of-Stopped-Instances is called, existing entries from the DynamoDB Instance table gets dropped.   
