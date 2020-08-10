@@ -42,3 +42,14 @@ The below output is common across both designs.
 - Call to Inspector Assessment template is done before instance shut down
 
 ![Sample run](/img/sample-run.jpg)
+
+## *References*
+
+Lambda cross account:<br>
+https://medium.com/@it.melnichenko/invoke-a-lambda-across-multiple-aws-accounts-8c094b2e70be
+
+Deep Dive: AWS AssumeRole using STS API:<br>
+https://blog.knoldus.com/deep-dive-aws-temporary-security-credentials-assumerole-and-iam-role/
+
+Cross-account access to DynamoDB:<br>
+https://kumo-knowledge-ui-iad-prod.amazon.com/view/article_13557
