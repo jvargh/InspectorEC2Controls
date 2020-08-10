@@ -1,0 +1,170 @@
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+#
+# Notes:
+# - Add appropriate tags to the table
+# - Add encryption at rest settings to the table
+# - After the table has been used for a while, consider adjusting the provisioned throughput
+#   settings of the table and the index based on consumed capacity metrics
+# - The attribute name "InstanceRegion" is used rather than "Region" because "Region" is reserved
+#   for use by DynamoDB
+# - When loading instances that were started from the "StartInstances" Lambda function, consider
+#   using the BatchWriteItem API
+#   https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_BatchWriteItem.html
+# - Remember to paginate query results
+#   https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.Pagination.html
+#
+# aws cloudformation update-stack \
+#   --stack-name DynamoDB-Inspector \
+#   --template-body file://dynamodb-inspector.yaml
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  DynamoDB tables with global secondary indexes for querying. InstancesTable is for storing EC2
+  instance IDs that were found to be stopped prior to an Inspector assessment. ExceptionsTable is
+  for storing exceptions such as "DoNotStart" and "DoNotStop".
+Parameters:
+  InstancesTableName:
+    Type: String
+    Default: Inspector-Started-Instances
+  InstancesGsiName:
+    Type: String
+    Default: AccountId-InstanceRegion-index
+  ExceptionsTableName:
+    Type: String
+    Default: Inspector-Exceptions
+  ExceptionsGsiName:
+    Type: String
+    Default: AccountId-InstanceRegion-index
+
+Resources:
+  InstancesTable:
+    # The Instances table is meant to be populated with instances that were started before an
+    # Inspector assessment. Then they can be queried again after the assessment and stopped. An
+    # instance should be written with attributes InstanceId, AccountId, and InstanceRegion.
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref InstancesTableName
+      AttributeDefinitions:
+        - AttributeName: InstanceId
+          AttributeType: S
+        - AttributeName: AccountId
+          AttributeType: S
+        - AttributeName: InstanceRegion
+          AttributeType: S
+      KeySchema:
+        - AttributeName: InstanceId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 3
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref InstancesGsiName
+          KeySchema:
+            - AttributeName: AccountId
+              KeyType: HASH
+            - AttributeName: InstanceRegion
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 2
+            WriteCapacityUnits: 3
+  ExceptionsTable:
+    # The Exceptions table is meant to store exceptions to the start for Inspector policy.
+    # Exceptions added should include all attributes like an Instance, but also include an
+    # "ExceptionType" attribute to describe what the exception is. Examples would be "DoNotStop"
+    # (this instance may be started for an Inspector assessment, but should not be stopped
+    # afterwards) or "DoNotStart" (this instance should not be started for an Inspector assessment).
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ExceptionsTableName
+      AttributeDefinitions:
+        - AttributeName: InstanceId
+          AttributeType: S
+        - AttributeName: AccountId
+          AttributeType: S
+        - AttributeName: InstanceRegion
+          AttributeType: S
+      KeySchema:
+        - AttributeName: InstanceId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref ExceptionsGsiName
+          KeySchema:
+            - AttributeName: AccountId
+              KeyType: HASH
+            - AttributeName: InstanceRegion
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 2
+            WriteCapacityUnits: 1
+
+Outputs:
+  DescribeInstancesTableCommand:
+    Description: AWS CLI command to describe the table
+    Value: !Sub aws dynamodb describe-table --region ${AWS::Region} --table-name ${InstancesTableName}
+  PutInstanceCommand:
+    Description: AWS CLI command to put an item into the table
+    Value: !Sub >
+      aws dynamodb put-item --region ${AWS::Region} --table-name ${InstancesTableName}
+      --item '{"InstanceId": {"S": "i-abcdef12345678901"},
+      "AccountId": {"S": "111111111111"},
+      "InstanceRegion": {"S": "${AWS::Region}"}}'
+  QueryInstancesCommand:
+    Description: AWS CLI command to query items from the index
+    Value: !Sub >
+      aws dynamodb query --region ${AWS::Region} --table-name ${InstancesTableName}
+      --index-name ${InstancesGsiName}
+      --key-condition-expression "AccountId = :a AND InstanceRegion = :r"
+      --expression-attribute-values '{":a":{"S":"111111111111"},":r":{"S":"${AWS::Region}"}}'
+  DescribeExceptionsTableCommand:
+    Description: AWS CLI command to describe the table
+    Value: !Sub aws dynamodb describe-table --region ${AWS::Region} --table-name ${ExceptionsTableName}
+  PutExceptionCommand:
+    Description: AWS CLI command to put an item into the table
+    Value: !Sub >
+      aws dynamodb put-item --region ${AWS::Region} --table-name ${ExceptionsTableName}
+      --item '{"InstanceId": {"S": "i-abcdef12345678901"},
+      "AccountId": {"S": "111111111111"},
+      "InstanceRegion": {"S": "${AWS::Region}"}}'
+  QueryDoNotStartExceptionsCommand:
+    Description: AWS CLI command to query items from the index
+    Value: !Sub >
+      aws dynamodb query --region ${AWS::Region} --table-name ${ExceptionsTableName}
+      --index-name ${ExceptionsGsiName}
+      --key-condition-expression "AccountId = :a AND InstanceRegion = :r"
+      --filter-expression "ExceptionType = :e"
+      --expression-attribute-values '{":a": {"S": "111111111111"}, ":r": {"S": "${AWS::Region}"}, ":e": {"S": "DoNotStart"}}'
+  QueryDoNotStopExceptionsCommand:
+    Description: AWS CLI command to query items from the index
+    Value: !Sub >
+      aws dynamodb query --region ${AWS::Region} --table-name ${ExceptionsTableName}
+      --index-name ${ExceptionsGsiName}
+      --key-condition-expression "AccountId = :a AND InstanceRegion = :r"
+      --filter-expression "ExceptionType = :e"
+      --expression-attribute-values '{":a": {"S": "111111111111"}, ":r": {"S": "${AWS::Region}"}, ":e": {"S": "DoNotStop"}}'
+  BulkLoadTablesScript:
+    Description: Bash script with AWS CLI commands to put many pseudo-random items into the tables
+    Value: !Sub |
+      for ACCOUNT_ID in 111111111111 222222222222 333333333333; do
+        for REGION in us-gov-west-1 us-gov-east-1; do
+          for i in $(seq 1 5); do
+            INSTANCE_ID="i-$RANDOM$RANDOM";
+            aws dynamodb put-item --region ${AWS::Region} --table-name ${InstancesTableName} --item "{\"InstanceId\": {\"S\": \"$INSTANCE_ID\"}, \"AccountId\": {\"S\": \"$ACCOUNT_ID\"}, \"InstanceRegion\": {\"S\": \"$REGION\"}}";
+            echo Added Instance $INSTANCE_ID;
+            EXCEPTION_RANDOM=$RANDOM;
+            if [[ $EXCEPTION_RANDOM -gt 27000 ]]; then
+              aws dynamodb put-item --region ${AWS::Region} --table-name ${ExceptionsTableName} --item "{\"InstanceId\": {\"S\": \"$INSTANCE_ID\"}, \"AccountId\": {\"S\": \"$ACCOUNT_ID\"}, \"InstanceRegion\": {\"S\": \"$REGION\"}, \"ExceptionType\": {\"S\": \"DoNotStart\"}}";
+              echo Added Exception $INSTANCE_ID as DoNotStart;
+            elif [[ $EXCEPTION_RANDOM -gt 20000 ]]; then
+              aws dynamodb put-item --region ${AWS::Region} --table-name ${ExceptionsTableName} --item "{\"InstanceId\": {\"S\": \"$INSTANCE_ID\"}, \"AccountId\": {\"S\": \"$ACCOUNT_ID\"}, \"InstanceRegion\": {\"S\": \"$REGION\"}, \"ExceptionType\": {\"S\": \"DoNotStop\"}}";
+              echo Added Exception $INSTANCE_ID as DoNotStop;
+            fi;
+          done;
+        done;
+      done
