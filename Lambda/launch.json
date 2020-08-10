@@ -13,38 +13,37 @@
                 "runtime": "python3.8",
                 "payload": {
                     "json": {
-                        // "account_id": "524517701320",
-                        "account_id": "149588228975",
+                        "account_id": "xxxxxxxxxxxxx",
                         "region_name": "us-east-1",
-                        "role_arn" : "arn:aws:iam::149588228975:role/JV-AssumeRole-EC2",
-                        "insp_assmt_template_arn" : "arn:aws:inspector:us-east-1:524517701320:target/0-G8AMLzSL/template/0-VRIEDFMO",
-                        "action" : "stop"    // start (all stopped inst)/3.5m   inspect /0.02m     stop (all running inst)/0.55s                             
+                        "role_arn" : "arn:aws:iam::xxxxxxxxxxxxx:role/JV-AssumeRole-EC2",
+                        "insp_assmt_template_arn" : "arn:aws:inspector:us-east-1:xxxxxxxxxxxxx:target/0-G8AMLzSL/template/0-VRIEDFMO",
+                        "action" : "inspect"    // start (all stopped inst)/3.5m   inspect /0.02m     stop (all running inst)/0.55s                             
+                    }
+                },
+                "environmentVariables": {}
+            }
+        },
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "lambda-files:lambdaConfigAccess.lambda_handler (python3.8)",
+            "invokeTarget": {
+                "target": "code",
+                "projectRoot": "lambda-files/src",
+                "lambdaHandler": "lambdaConfigAccess.lambda_handler"
+            },
+            "lambda": {
+                "runtime": "python3.8",
+                "payload": {
+                    "json": {
+                        "account_id": "xxxxxxxxxxxxx",
+                        "region_name": "us-east-1",
+                        "insp_assmt_template_arn": "arn:aws:inspector:us-east-1:xxxxxxxxxxxxx:target/0-xxxxxx/template/0-xxxxxx",
+                        "action": "inspect"
                     }
                 },
                 "environmentVariables": {}
             }
         }
-        // {
-        //     "type": "aws-sam",
-        //     "request": "direct-invoke",
-        //     "name": "lambda-files:lambdaConfigAccess.lambda_handler (python3.8)",
-        //     "invokeTarget": {
-        //         "target": "code",
-        //         "projectRoot": "lambda-files/src",
-        //         "lambdaHandler": "lambdaConfigAccess.lambda_handler"
-        //     },
-        //     "lambda": {
-        //         "runtime": "python3.8",
-        //         "payload": {
-        //             "json": {
-        //                 "account_id": "524517701320",
-        //                 "region_name": "us-east-1",
-        //                 "insp_assmt_template_arn": "arn:aws:inspector:us-east-1:524517701320:target/0-G8AMLzSL/template/0-VRIEDFMO",
-        //                 "action": "inspect"
-        //             }
-        //         },
-        //         "environmentVariables": {}
-        //     }
-        // }
     ]
 }
