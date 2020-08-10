@@ -41,7 +41,7 @@ The below output is common across both designs.
 - It then makes an API call to get all started instances, that does a batch shut down and Waiter waits till 'instance_stopped' is reached. 
 - Call to Inspector Assessment template is done before instance shut down
 
-![Sample run](/img/sample-run.jpg)
+![Sample run](/img/0-sample-run.jpg)
 
 ## *References*
 
