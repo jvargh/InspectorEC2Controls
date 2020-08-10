@@ -51,5 +51,5 @@ https://medium.com/@it.melnichenko/invoke-a-lambda-across-multiple-aws-accounts-
 Deep Dive: AWS AssumeRole using STS API:<br>
 https://blog.knoldus.com/deep-dive-aws-temporary-security-credentials-assumerole-and-iam-role/
 
-VS Code for AWS User guide:<br>
+AWS Toolkit for VS Code User Guide:<br>
 https://docs.aws.amazon.com/toolkit-for-vscode/latest/userguide/aws-tookit-vscode-ug.pdf#serverless-apps
