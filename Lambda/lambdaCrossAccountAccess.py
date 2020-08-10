@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError, WaiterError
 
 LOG = logging.getLogger(__name__)
 
+# used to clear items in table
 def delete_table_items(table):
     try:
         scan = table.scan()
@@ -24,14 +25,16 @@ def delete_table_items(table):
     except Exception as e:
         print('\nTable delete exception: ', e)
 
+# used to start all stopped instances
 def StartStoppedInstances( ec2_con_cli, table_inst, account_id ):
 
+    # used to collect stopped instances that are now running by the end
     stopped_instances_now_running=[]
 
     # Clear Instances table
     delete_table_items(table_inst)
 
-    # Define EC2 filters
+    # Define EC2 filters. Pass in AccountID to get EC2 in just this account
     f0= {"Name": "owner-id", "Values":[account_id]}
     f1= {"Name" : "instance-state-name", "Values" : ['running','stopped']}
     f2= {"Name" : "tag:Name", "Values" : ['SSM-Test','SSMRedhat','SSMWin2019']}  # for test only      
@@ -51,12 +54,14 @@ def StartStoppedInstances( ec2_con_cli, table_inst, account_id ):
             elif(instanceState=='stopped'):
                 print('Stopped: ', instanceId, ' : ', instanceName)
                 stopped_instances_now_running.append(instanceId)
-
+    
+    # if no entries i.e. all instances running then skip
     if stopped_instances_now_running:
         print('Starting instances: ', stopped_instances_now_running)
         ec2_con_cli.start_instances(InstanceIds=stopped_instances_now_running)
 
         # 40 checks every 15s. https://github.com/boto/botocore/blob/master/botocore/data/ec2/2016-11-15/waiters-2.json
+        # wait till all instances in list are in RUNNING state
         waiter=ec2_con_cli.get_waiter('instance_running') 
 
         try:
@@ -68,6 +73,7 @@ def StartStoppedInstances( ec2_con_cli, table_inst, account_id ):
 
     return stopped_instances_now_running
 
+# used to verify all started instances in list are started not stopped else write to DB
 def VerifyStoppedInstancesAreRunning(ec2_con_cli, stopped_instances_now_running, table_inst, account_id, region_name_):
 
     # Define EC2 filters
@@ -91,7 +97,7 @@ def VerifyStoppedInstancesAreRunning(ec2_con_cli, stopped_instances_now_running,
                     print('(Good) Running: ',instanceId,"__",instanceName)
                     continue
                 else: 
-                    # Write to DynamoDB
+                    # Write to DynamoDB if instances in list are in any state other than RUNNING
                     print('(Bad) Stopped: ',instanceId,"__",instanceName,'. Writing to DB.')
                     instance_data = {
                         'InstanceId': instanceId,
@@ -100,6 +106,7 @@ def VerifyStoppedInstancesAreRunning(ec2_con_cli, stopped_instances_now_running,
                     }
                     table_inst.put_item(Item=instance_data)
 
+# used to stop all started instances
 def StopRunningInstances(ec2_con_cli, table_excp, account_id ):
 
     running_instances_now_stopped=[]
@@ -145,6 +152,7 @@ def StopRunningInstances(ec2_con_cli, table_excp, account_id ):
         ec2_con_cli.stop_instances(InstanceIds=running_instances_now_stopped)
 
         # 40 checks every 15s. https://github.com/boto/botocore/blob/master/botocore/data/ec2/2016-11-15/waiters-2.json
+        # wait till all instances in list are in STOPPED state
         waiter=ec2_con_cli.get_waiter('instance_stopped') 
 
         try:
@@ -156,6 +164,7 @@ def StopRunningInstances(ec2_con_cli, table_excp, account_id ):
 
     return running_instances_now_stopped    
 
+# used to inspect all started instances using the pre-configured assessment template in AWS Inspector
 def InspectAllInstances(template_arn, inspect_client):    
     now = datetime.now()
     try:        
@@ -175,9 +184,9 @@ def InspectAllInstances(template_arn, inspect_client):
         print(e)
         pass
             
-
+# main- start here
 def lambda_handler(event, context):
-    # Initialize
+    # Initialize- get data from event
     account_id=event.get('account_id')
     region_name_=event.get('region_name')
     insp_assmt_template_arn=event.get('insp_assmt_template_arn')
@@ -208,6 +217,7 @@ def lambda_handler(event, context):
     # Start here    
     if (action=="start"):
         print('\n<< Starting Stopped Instances in Region=',region_name_,', Account=',account_id,' >>')
+        # Get EC2 data from Config query and pass to fn to examine if Stopped and if so Start
         stopped_instances_now_running = StartStoppedInstances( ec2_con_cli, table_inst, account_id)
 
         print('\nSleeping for 2m...')
