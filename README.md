@@ -51,5 +51,5 @@ https://medium.com/@it.melnichenko/invoke-a-lambda-across-multiple-aws-accounts-
 Deep Dive: AWS AssumeRole using STS API:<br>
 https://blog.knoldus.com/deep-dive-aws-temporary-security-credentials-assumerole-and-iam-role/
 
-Cross-account access to DynamoDB:<br>
-https://kumo-knowledge-ui-iad-prod.amazon.com/view/article_13557
+VS Code for AWS User guide:<br>
+https://docs.aws.amazon.com/toolkit-for-vscode/latest/userguide/aws-tookit-vscode-ug.pdf#serverless-apps
