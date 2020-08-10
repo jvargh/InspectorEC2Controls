@@ -220,6 +220,7 @@ def lambda_handler(event, context):
         # Get EC2 data from Config query and pass to fn to examine if Stopped and if so Start
         stopped_instances_now_running = StartStoppedInstances( ec2_con_cli, table_inst, account_id)
 
+        # Give enough time for EC2's to settle down 
         print('\nSleeping for 2m...')
         time.sleep(120)
         
