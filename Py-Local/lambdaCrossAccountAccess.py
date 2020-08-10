@@ -225,13 +225,12 @@ def lambda_handler(event, context):
 
 
 # Run starts here. To start stopped instances insert 'stop' and Execute. To stop started instances insert 'start' and Execute    
-account_id = "149588228975"
-# account_id = "524517701320"
+account_id = "xxxxxxxxxxxxx"
 event = {
     "account_id" : account_id,
     "region_name" : "us-east-1",
     "role_arn" : "arn:aws:iam::"+account_id+":role/JV-AssumeRole-EC2",
-    "insp_assmt_template_arn" : "arn:aws:inspector:us-east-1:"+account_id+":target/0-G8AMLzSL/template/0-VRIEDFMO",
+    "insp_assmt_template_arn" : "arn:aws:inspector:us-east-1:"+account_id+":target/0-xxxxxxxxxxxxx/template/0-xxxxxxxxxxxxx",
     "action" : "stop"    # start (all stopped inst)/3.5m   inspect /0.02m     stop (all running inst)/0.55s     
 }
 

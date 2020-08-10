@@ -28,7 +28,7 @@ Lambda and Py implementation can be found in 'lambdaCrossAccountAccess'. Py-Loca
 * [EC2 Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.run_instances) for Python was leveraged. 
 * DynamoDB Cfn template 'dynamodb-inspector' sets up the Instance and Exceptions tables, with supporting commands in the Output section
 * Common benefits came about by using EC2 batch start and stop API, and the [Waiters module](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#waiters) was used to wait for a collective return of resources when a specified state was reached.
-* Single lambda to host Stop/Start/Inspector runs. Event inputs can be used to trigger what needs to get executed.  
+* Single lambda to host Stop/Start/Inspector runs. Event inputs can be used to trigger what needs to get executed, see sample launch.json as an example.   
 
 ## *Output of a Sample run*
 

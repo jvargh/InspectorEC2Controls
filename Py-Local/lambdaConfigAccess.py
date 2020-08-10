@@ -215,9 +215,9 @@ def lambda_handler(event, context):
 
 # Run starts here. To start insert Stop and Execute. Wait 5m (Config to reflect state) and insert Start and Execute    
 event = {
-    "account_id" : "524517701320",
+    "account_id" : "xxxxxxxxxxxxx",
     "region_name" : "us-east-1",
-    "insp_assmt_template_arn" : "arn:aws:inspector:us-east-1:524517701320:target/0-G8AMLzSL/template/0-VRIEDFMO",
+    "insp_assmt_template_arn" : "arn:aws:inspector:us-east-1:xxxxxxxxxxxxx:target/0-xxxxxxxxxxxxx/template/0-xxxxxxxxxxxxx",
     "action" : "start"    # start (all stopped inst)/3.5m   inspect /0.02m     stop (all running inst)/0.55s     
 }
 
